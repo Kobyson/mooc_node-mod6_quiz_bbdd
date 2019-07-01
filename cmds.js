@@ -151,8 +151,29 @@ exports.editCmd = (rl, id) => {
  * @param id Clave del quiz a probar.
  */
 exports.testCmd = (rl, id) => {
-    log('Probar el quiz indicado.', 'red');
-    rl.prompt();
+    log(`Probando el quiz ${colorize(id, 'magenta')}.`);
+    if (typeof id === "undefined") {
+        errorlog(`Falta el parámetro id.`);
+        rl.prompt();
+    } else {
+        try {
+            const quiz = model.getByIndex(id);
+            
+            rl.question(colorize(`${quiz.question}? `, 'blue'), answer => {
+                log('Su respuesta es: ');
+                if (answer.toLowerCase().trim()===quiz.answer.toLowerCase().trim()) {
+                    biglog('CORRECTO', 'green');
+                } else {
+                    biglog('INCORRECTO', 'red');
+                }
+                rl.prompt();
+                
+            });
+        } catch (error) {
+            errorlog(error.message);
+            rl.prompt();
+        }
+    }
 };
 
 
@@ -164,7 +185,42 @@ exports.testCmd = (rl, id) => {
  */
 exports.playCmd = rl => {
     log('Jugar.', 'red');
-    rl.prompt();
+
+    let score = 0;
+    let toBeResolved =[];
+    model.getAll().forEach((quiz,id) => {
+        toBeResolved.push(id);
+    });
+    const playOne=()=>{
+    if (toBeResolved.length===0) {
+        log(`No hay nada más que preguntar. \nAciertos: ${score}`,'yellow');
+        biglog(score,'red');
+        rl.prompt();
+    } else {
+        try {
+            let id = (Math.ceil(Math.random()*(toBeResolved.length-1))).toFixed(0);
+            let quiz= model.getByIndex(toBeResolved[id]);
+            
+            rl.question(colorize(`${quiz.question}? `, 'blue'), answer => {
+                
+                if (answer.toLowerCase().trim()===quiz.answer.toLowerCase().trim()) {
+                    score++;
+                    log(`CORRECTO - Llevas ${score} aciertos.`);
+                    toBeResolved.splice(id,1);
+                    playOne(); 
+                } else {
+                    log(`INCORRECTO - Fin del Juego.\nAciertos: ${score}`,'yellow');
+                    biglog(score,'red');
+                    rl.prompt();
+                }
+            });
+        } catch (error) {
+            errorlog(error.message);
+            rl.prompt();
+        }
+    }
+}
+playOne();
 };
 
 
@@ -174,9 +230,9 @@ exports.playCmd = rl => {
  * @param rl Objeto readline usado para implementar el CLI.
  */
 exports.creditsCmd = rl => {
-    log('Autores de la práctica:');
-    log('Nombre 1', 'green');
-    log('Nombre 2', 'green');
+    log('Autor de la práctica:');
+    log('Harmenson Polo Olivo', 'green');
+    //log('Nombre 2', 'green');
     rl.prompt();
 };
 
@@ -189,4 +245,3 @@ exports.creditsCmd = rl => {
 exports.quitCmd = rl => {
     rl.close();
 };
-
