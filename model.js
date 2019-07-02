@@ -1,6 +1,6 @@
 
 const Sequelize = require('sequelize');
-// const Op = Sequelize.Op;
+const Op = Sequelize.Op;
 
 //quizzes Nombre del BBDD donde se almacenan las preguntas.
 

@@ -227,28 +227,31 @@ exports.editCmd = (rl, id) => {
  * @param id Clave del quiz a probar.
  */
 exports.testCmd = (rl, id) => {
-    log(`Probando el quiz ${colorize(id, 'magenta')}.`);
-    if (typeof id === "undefined") {
-        errorlog(`Falta el parámetro id.`);
-        rl.prompt();
-    } else {
-        try {
-            const quiz = model.getByIndex(id);
-            rl.question(colorize(`${quiz.question}? `, 'blue'), answer => {
-                log('Su respuesta es: ');
-                if (answer.toLowerCase().trim()===quiz.answer.toLowerCase().trim()) {
-                    biglog('CORRECTO', 'green');
-                } else {
-                    biglog('INCORRECTO', 'red');
-                }
-                rl.prompt();
 
-            });
-        } catch (error) {
-            errorlog(error.message);
-            rl.prompt();
+    validateId(id)
+    .then(id=>models.quiz.findByPk(id))
+    .then(quiz => {
+        if(!quiz){
+            throw new Error(`No existe un quiz asociado al id=${id}.`);
         }
-    }
+        log(`Probando el quiz ${colorize(quiz.id, 'magenta')}.`);
+       
+        return makeQuestion(rl, colorize(`${quiz.question}? : `, 'blue'))
+        .then(a=>{
+            log('Su respuesta es: ');
+            if (a.toLowerCase().trim()===quiz.answer.toLowerCase().trim()) {
+                biglog('CORRECTO', 'green');
+            } else {
+                biglog('INCORRECTO', 'red');
+            }
+        });
+    })
+    .catch(error => {
+        errorlog(error.message);
+    })
+    .then(()=> {
+        rl.prompt();
+    });
 };
 
 
@@ -263,39 +266,41 @@ exports.playCmd = rl => {
 
     let score = 0;
     let toBeResolved =[];
-    model.getAll().forEach((quiz,id) => {
-        toBeResolved.push(id);
-    });
-    const playOne=()=>{
-    if (toBeResolved.length===0) {
-        log(`No hay nada más que preguntar. \nAciertos: ${score}`,'yellow');
-        biglog(score,'red');
-        rl.prompt();
-    } else {
-        try {
-            let id = (Math.ceil(Math.random()*(toBeResolved.length-1))).toFixed(0);
-            let quiz= model.getByIndex(toBeResolved[id]);
+    
+    models.quiz.findAll()
+    .each(quiz=>{
+        toBeResolved.push(quiz.id);
+    })
+//     const playOne=()=>{
+//     if (toBeResolved.length===0) {
+//         log(`No hay nada más que preguntar. \nAciertos: ${score}`,'yellow');
+//         biglog(score,'red');
+//         rl.prompt();
+//     } else {
+//         try {
+//             let id = (Math.ceil(Math.random()*(toBeResolved.length-1))).toFixed(0);
+//             let quiz= model.getByIndex(toBeResolved[id]);
             
-            rl.question(colorize(`${quiz.question}? `, 'blue'), answer => {
+//             rl.question(colorize(`${quiz.question}? `, 'blue'), answer => {
                 
-                if (answer.toLowerCase().trim()===quiz.answer.toLowerCase().trim()) {
-                    score++;
-                    log(`CORRECTO - Llevas ${score} aciertos.`);
-                    toBeResolved.splice(id,1);
-                    playOne(); 
-                } else {
-                    log(`INCORRECTO - Fin del Juego.\nAciertos: ${score}`,'yellow');
-                    biglog(score,'red');
-                    rl.prompt();
-                }
-            });
-        } catch (error) {
-            errorlog(error.message);
-            rl.prompt();
-        }
-    }
-}
-playOne();
+//                 if (answer.toLowerCase().trim()===quiz.answer.toLowerCase().trim()) {
+//                     score++;
+//                     log(`CORRECTO - Llevas ${score} aciertos.`);
+//                     toBeResolved.splice(id,1);
+//                     playOne(); 
+//                 } else {
+//                     log(`INCORRECTO - Fin del Juego.\nAciertos: ${score}`,'yellow');
+//                     biglog(score,'red');
+//                     rl.prompt();
+//                 }
+//             });
+//         } catch (error) {
+//             errorlog(error.message);
+//             rl.prompt();
+//         }
+//     }
+// }
+// playOne();
 };
 
 
